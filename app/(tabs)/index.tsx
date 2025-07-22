@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, BookOpen, Trash2, Trophy } from 'lucide-react-native';
 import { database, CardSet } from '@/lib/database';
@@ -47,7 +47,7 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await database.deleteCardSet(set.id!);
+              await database.deleteCardSet(set.id);
               loadCardSets();
             } catch (error) {
               Alert.alert('Error', 'Failed to delete set');
@@ -78,7 +78,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.appName}>Moinaki</Text>
+          <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.subtitle}>My Card Sets</Text>
         </View>
         <TouchableOpacity 
@@ -91,7 +91,7 @@ export default function HomeScreen() {
 
       {cardSets.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🌈</Text>
+          <Image source={require('@/assets/images/icon.png')} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No sets yet</Text>
           <Text style={styles.emptyDescription}>
             Add your first flashcard set by uploading a CSV file
@@ -130,6 +130,7 @@ export default function HomeScreen() {
                       <Text style={styles.cardName}>{set.name}</Text>
                       <Text style={styles.cardStats}>
                         {set.learnedCards} of {set.totalCards} learned
+                        {set.archivedCards > 0 && ` • ${set.archivedCards} archived`}
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -161,6 +162,12 @@ export default function HomeScreen() {
                     <View style={styles.completedBadge}>
                       <Trophy size={16} color="#00FF7F" />
                       <Text style={styles.completedText}>Completed</Text>
+                    </View>
+                  )}
+
+                  {set.archivedCards === set.totalCards && set.totalCards > 0 && (
+                    <View style={styles.archivedBadge}>
+                      <Text style={styles.archivedText}>📦 All Archived</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -202,10 +209,10 @@ const styles = StyleSheet.create({
   titleContainer: {
     flex: 1,
   },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FF1493',
+  logo: {
+    width: 120,
+    height: 40,
+    resizeMode: 'contain',
   },
   subtitle: {
     fontSize: 16,
@@ -232,8 +239,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 80,
+    width: 60,
+    height: 60,
     marginBottom: 20,
+    resizeMode: 'contain',
   },
   emptyTitle: {
     fontSize: 24,
@@ -350,6 +359,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#00FF7F',
+    marginLeft: 4,
+  },
+  archivedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 4,
+    backgroundColor: '#FF4500',
+    borderRadius: 4,
+  },
+  archivedText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
     marginLeft: 4,
   },
 });

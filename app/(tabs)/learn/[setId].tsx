@@ -16,6 +16,7 @@ export default function LearnScreen() {
   const [loading, setLoading] = useState(true);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
+  const [isArchivedMode, setIsArchivedMode] = useState(false);
 
   // Animation values
   const cardAnimation = new Animated.Value(1);
@@ -23,7 +24,7 @@ export default function LearnScreen() {
 
   const loadCards = async () => {
     try {
-      const loadedCards = await database.getCardsForLearning(Number(setId), 10);
+      const loadedCards = await database.getCardsForLearning(String(setId), 10);
       if (loadedCards.length === 0) {
         Alert.alert('Empty Set', 'This set has no cards to learn', [
           { text: 'OK', onPress: () => router.back() }
@@ -31,9 +32,13 @@ export default function LearnScreen() {
         return;
       }
       
+      // Проверяем, все ли карточки архивные
+      const allArchived = loadedCards.every(card => card.isArchived);
+      setIsArchivedMode(allArchived);
+      
       setCards(loadedCards);
       setCurrentCardIndex(0);
-      generateOptions(loadedCards[0]);
+      generateAnswerOptions(loadedCards[0]);
     } catch (error) {
       console.error('Error loading cards:', error);
       Alert.alert('Error', 'Failed to load cards');
@@ -45,7 +50,7 @@ export default function LearnScreen() {
   const generateAnswerOptions = async (currentCard: Card) => {
     try {
       // Get all cards from the same set for generating wrong options
-      const allCards = await database.getCardsForLearning(Number(setId), 100);
+      const allCards = await database.getCardsForLearning(String(setId), 100);
       const allTranslations = allCards.map(card => card.translation);
       const generatedOptions = generateOptions(currentCard.translation, allTranslations);
 
@@ -76,7 +81,7 @@ export default function LearnScreen() {
     setTotalAnswered(prev => prev + 1);
 
     // Update card progress
-    database.updateCardProgress(currentCard.id!, correct);
+    database.updateCardProgress(currentCard.id, correct);
 
     // Animate result
     Animated.spring(resultAnimation, {
@@ -103,25 +108,23 @@ export default function LearnScreen() {
           toValue: 1,
           duration: 200,
           useNativeDriver: true,
-        })
+        }),
       ]).start();
 
-      setTimeout(() => {
-        const nextIndex = currentCardIndex + 1;
-        setCurrentCardIndex(nextIndex);
-        generateAnswerOptions(cards[nextIndex]);
-        setSelectedAnswer(null);
-        setShowResult(false);
-        resultAnimation.setValue(0);
-      }, 200);
+      const nextIndex = currentCardIndex + 1;
+      setCurrentCardIndex(nextIndex);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setIsCorrect(false);
+      resultAnimation.setValue(0);
+      generateAnswerOptions(cards[nextIndex]);
     } else {
-      // Show completion screen
+      // Finished all cards
       Alert.alert(
         'Session Complete!',
-        `You answered ${correctAnswers} out of ${totalAnswered} questions correctly.`,
+        `You answered ${correctAnswers} out of ${totalAnswered} correctly.`,
         [
-          { text: 'Continue', onPress: loadCards },
-          { text: 'Finish', onPress: () => router.back() }
+          { text: 'Continue', onPress: () => router.back() }
         ]
       );
     }
@@ -129,160 +132,129 @@ export default function LearnScreen() {
 
   const showSentences = () => {
     const currentCard = cards[currentCardIndex];
-    router.push(`/sentences/${currentCard.id}`);
+    if (!currentCard || !currentCard.sentences || currentCard.sentences.length === 0) {
+      return null;
+    }
+
+    // Показываем максимум 3 предложения
+    const sentencesToShow = currentCard.sentences.slice(0, 3);
+    
+    return (
+      <View style={styles.sentencesContainer}>
+        <Text style={styles.sentencesTitle}>Example sentences:</Text>
+        {sentencesToShow.map((sentence, index) => {
+          // Подсвечиваем изученное слово зеленым цветом
+          const highlightedSentence = sentence.replace(
+            new RegExp(`\\b${currentCard.word}\\b`, 'gi'),
+            (match) => `**${match}**`
+          );
+          
+          return (
+            <Text key={index} style={styles.sentence}>
+              {highlightedSentence.split('**').map((part, partIndex) => {
+                if (part.toLowerCase() === currentCard.word.toLowerCase()) {
+                  return (
+                    <Text key={partIndex} style={styles.highlightedWord}>
+                      {part}
+                    </Text>
+                  );
+                }
+                return part;
+              })}
+            </Text>
+          );
+        })}
+      </View>
+    );
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Preparing cards...</Text>
-      </View>
-    );
-  }
-
-  if (cards.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No cards to learn</Text>
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading cards...</Text>
       </View>
     );
   }
 
   const currentCard = cards[currentCardIndex];
-  const progress = ((currentCardIndex + 1) / cards.length) * 100;
+  if (!currentCard) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>No cards available</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color="#374151" />
         </TouchableOpacity>
-        
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {currentCardIndex + 1} of {cards.length}
-          </Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-        </View>
-
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreText}>{correctAnswers}/{totalAnswered}</Text>
-        </View>
+        <Text style={styles.title}>Learning</Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <Animated.View 
-        style={[
-          styles.cardContainer,
-          {
-            opacity: cardAnimation,
-            transform: [{
-              scale: cardAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.9, 1],
-              }),
-            }],
-          }
-        ]}
-      >
+      <View style={styles.scoreContainer}>
+        <Text style={styles.scoreText}>
+          {correctAnswers}/{totalAnswered} correct
+          {isArchivedMode && (
+            <Text style={styles.archivedModeText}> • 📦 Archive Mode</Text>
+          )}
+        </Text>
+      </View>
+
+      <Animated.View style={[styles.cardContainer, { opacity: cardAnimation }]}>
         <View style={styles.card}>
-          <TouchableOpacity onPress={showSentences} style={styles.wordContainer}>
-            <Text style={styles.word}>{currentCard.word}</Text>
-            <Volume2 size={20} color="#FF1493" style={styles.volumeIcon} />
-          </TouchableOpacity>
+          <Text style={styles.word}>{currentCard.word}</Text>
           
-          <Text style={styles.instruction}>
-            Choose the correct translation:
-          </Text>
-
-          <View style={styles.optionsContainer}>
-            {options.map((option, index) => {
-              const isSelected = selectedAnswer === option;
-              const isCorrectOption = option === currentCard.translation;
-              
-              let buttonStyle = styles.optionButton;
-              let textStyle = styles.optionText;
-
-              if (showResult) {
-                if (isCorrectOption) {
-                  buttonStyle = [styles.optionButton, styles.correctOption];
-                  textStyle = [styles.optionText, styles.correctOptionText];
-                } else if (isSelected) {
-                  buttonStyle = [styles.optionButton, styles.incorrectOption];
-                  textStyle = [styles.optionText, styles.incorrectOptionText];
-                } else {
-                  buttonStyle = [styles.optionButton, styles.disabledOption];
-                  textStyle = [styles.optionText, styles.disabledOptionText];
-                }
-              } else if (isSelected) {
-                buttonStyle = [styles.optionButton, styles.selectedOption];
-                textStyle = [styles.optionText, styles.selectedOptionText];
-              }
-
-              return (
+          {!showResult && (
+            <View style={styles.optionsContainer}>
+              {options.map((option, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={buttonStyle}
+                  style={styles.optionButton}
                   onPress={() => handleAnswerSelect(option)}
-                  disabled={showResult}
                 >
-                  <Text style={textStyle}>{option}</Text>
-                  {showResult && isCorrectOption && (
-                    <CheckCircle size={20} color="#00FF7F" />
-                  )}
-                  {showResult && isSelected && !isCorrectOption && (
-                    <XCircle size={20} color="#FF4500" />
-                  )}
+                  <Text style={styles.optionText}>{option}</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              ))}
+            </View>
+          )}
+
+          {showResult && (
+            <Animated.View 
+              style={[
+                styles.resultContainer,
+                { transform: [{ scale: resultAnimation }] }
+              ]}
+            >
+              <View style={styles.resultHeader}>
+                {isCorrect ? (
+                  <CheckCircle size={32} color="#10B981" />
+                ) : (
+                  <XCircle size={32} color="#EF4444" />
+                )}
+                <Text style={[styles.resultText, { color: isCorrect ? '#10B981' : '#EF4444' }]}>
+                  {isCorrect ? 'Correct!' : 'Incorrect'}
+                </Text>
+              </View>
+              
+              <View style={styles.correctAnswerContainer}>
+                <Text style={styles.correctAnswerLabel}>Correct answer:</Text>
+                <Text style={styles.correctAnswer}>{currentCard.translation}</Text>
+              </View>
+
+              {showSentences()}
+            </Animated.View>
+          )}
         </View>
       </Animated.View>
 
-      {showResult && (
-        <Animated.View 
-          style={[
-            styles.resultContainer,
-            {
-              opacity: resultAnimation,
-              transform: [{
-                translateY: resultAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [50, 0],
-                }),
-              }],
-            }
-          ]}
-        >
-          <View style={[
-            styles.resultBadge,
-            isCorrect ? styles.correctBadge : styles.incorrectBadge
-          ]}>
-            {isCorrect ? (
-              <CheckCircle size={24} color="#ffffff" />
-            ) : (
-              <XCircle size={24} color="#ffffff" />
-            )}
-            <Text style={styles.resultText}>
-              {isCorrect ? 'Correct!' : 'Wrong'}
-            </Text>
-          </View>
-        </Animated.View>
-      )}
-
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={styles.restartButton}
-          onPress={loadCards}
-        >
-          <RotateCcw size={20} color="#6B7280" />
-          <Text style={styles.restartText}>Restart</Text>
-        </TouchableOpacity>
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          {currentCardIndex + 1} of {cards.length}
+        </Text>
       </View>
     </View>
   );
@@ -291,30 +263,11 @@ export default function LearnScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#6B7280',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#6B7280',
+    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60,
@@ -329,34 +282,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  progressContainer: {
-    flex: 1,
-    marginHorizontal: 20,
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF1493',
   },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 3,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#FF1493',
-    borderRadius: 3,
+  placeholder: {
+    width: 40,
   },
   scoreContainer: {
-    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
   scoreText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#374151',
+    textAlign: 'center',
+  },
+  archivedModeText: {
+    color: '#FF4500',
+    fontWeight: '500',
   },
   cardContainer: {
     flex: 1,
@@ -370,121 +319,104 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    borderWidth: 2,
-    borderColor: '#FF1493',
-  },
-  wordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
+    shadowRadius: 8,
+    elevation: 8,
   },
   word: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#FF1493',
     textAlign: 'center',
-  },
-  volumeIcon: {
-    marginLeft: 12,
-  },
-  instruction: {
-    fontSize: 18,
-    color: '#6B7280',
-    textAlign: 'center',
     marginBottom: 30,
   },
   optionsContainer: {
-    gap: 16,
+    gap: 15,
   },
   optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
     borderWidth: 2,
     borderColor: '#FF1493',
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 15,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-  },
-  selectedOption: {
-    backgroundColor: '#FFE4E1',
-    borderColor: '#FF1493',
-  },
-  correctOption: {
-    backgroundColor: '#F0FFF0',
-    borderColor: '#00FF7F',
-  },
-  incorrectOption: {
-    backgroundColor: '#FFE4E1',
-    borderColor: '#FF4500',
-  },
-  disabledOption: {
-    opacity: 0.6,
+    alignItems: 'center',
   },
   optionText: {
     fontSize: 18,
-    color: '#374151',
-    flex: 1,
-  },
-  selectedOptionText: {
+    fontWeight: '600',
     color: '#FF1493',
-    fontWeight: '600',
-  },
-  correctOptionText: {
-    color: '#00FF7F',
-    fontWeight: '600',
-  },
-  incorrectOptionText: {
-    color: '#FF4500',
-    fontWeight: '600',
-  },
-  disabledOptionText: {
-    color: '#9CA3AF',
   },
   resultContainer: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
     alignItems: 'center',
   },
-  resultBadge: {
+  resultHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  correctBadge: {
-    backgroundColor: '#00FF7F',
-  },
-  incorrectBadge: {
-    backgroundColor: '#FF4500',
+    marginBottom: 20,
   },
   resultText: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginLeft: 8,
+    marginLeft: 10,
   },
-  bottomActions: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 20,
+  correctAnswerContainer: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    width: '100%',
   },
-  restartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+  correctAnswerLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 5,
   },
-  restartText: {
+  correctAnswer: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#10B981',
+  },
+  sentencesContainer: {
+    width: '100%',
+  },
+  sentencesTitle: {
     fontSize: 16,
-    color: '#6B7280',
-    marginLeft: 8,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 10,
+  },
+  sentence: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  highlightedWord: {
+    color: '#10B981',
+    fontWeight: 'bold',
+  },
+  progressContainer: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 100,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#EF4444',
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

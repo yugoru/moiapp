@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Upload, FileText, ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Plus, FileText } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { database } from '@/lib/database';
-import { parseCSV } from '@/lib/csv-parser';
+import { parseCSV, CSVParseError } from '@/lib/csv-parser';
 
 export default function AddScreen() {
   const [setName, setSetName] = useState('');
@@ -28,7 +28,7 @@ export default function AddScreen() {
         try {
           const content = await FileSystem.readAsStringAsync(file.uri);
           const parsedData = parseCSV(content);
-          setPreview(parsedData.slice(0, 3)); // Show first 3 rows as preview
+          setPreview(parsedData.slice(0, 5)); // Show first 5 items
           
           // Auto-generate set name from filename if not provided
           if (!setName) {
@@ -36,13 +36,19 @@ export default function AddScreen() {
             setSetName(fileName.charAt(0).toUpperCase() + fileName.slice(1));
           }
         } catch (error) {
-          console.error('Error reading file:', error);
-          Alert.alert('Ошибка', 'Не удалось прочитать файл. Проверьте формат CSV.');
+          if (error instanceof CSVParseError) {
+            Alert.alert('Invalid File Format', error.message);
+          } else {
+            Alert.alert('Error', 'Failed to read file. Please check CSV format.');
+          }
+          setSelectedFile(null);
+          setPreview([]);
+          return;
         }
       }
     } catch (error) {
       console.error('Error picking file:', error);
-      Alert.alert('Error', 'Failed to pick file');
+      Alert.alert('Error', 'Failed to pick file. Please try again.');
     }
   };
 
@@ -62,41 +68,41 @@ export default function AddScreen() {
     try {
       const file = selectedFile.assets[0];
       const content = await FileSystem.readAsStringAsync(file.uri);
-      const parsedData = parseCSV(content);
+      
+      try {
+        const parsedData = parseCSV(content);
 
-      if (parsedData.length === 0) {
-        Alert.alert('Error', 'CSV file is empty or has incorrect format');
-        setIsLoading(false);
-        return;
-      }
+        if (parsedData.length === 0) {
+          Alert.alert('Error', 'CSV file is empty or has incorrect format');
+          setIsLoading(false);
+          return;
+        }
 
-      // Create card set
-      const setId = await database.createCardSet(setName.trim());
+        // Сохраняем CSV-файл в FileSystem через новую функцию
+        await database.createCardSet(setName.trim(), content);
 
-      // Add cards
-      const cards = parsedData.map(item => ({
-        word: item.word,
-        translation: item.translation,
-        sentences: item.sentences,
-        repeatCount: 0,
-        status: 'learning' as const,
-        setId: setId,
-      }));
+        // Clear form after successful creation
+        setSetName('');
+        setSelectedFile(null);
+        setPreview([]);
 
-      await database.addCards(cards);
-
-      Alert.alert(
-        'Success!',
-        `Set "${setName}" created with ${cards.length} cards`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              router.replace('/');
+        Alert.alert(
+          'Success!',
+          `Set "${setName}" created with ${parsedData.length} cards`,
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/'),
             },
-          },
-        ]
-      );
+          ]
+        );
+      } catch (error) {
+        if (error instanceof CSVParseError) {
+          Alert.alert('Invalid File Format', error.message);
+        } else {
+          Alert.alert('Error', 'Failed to create card set. Please check your file format.');
+        }
+      }
     } catch (error) {
       console.error('Error creating card set:', error);
       Alert.alert('Error', 'Failed to create card set');
@@ -142,7 +148,7 @@ export default function AddScreen() {
             onPress={pickCSVFile}
             disabled={isLoading}
           >
-            <Upload size={24} color="#FF1493" />
+            <Plus size={24} color="#007AFF" />
             <Text style={styles.uploadButtonText}>
               {selectedFile && !selectedFile.canceled ? 'Change File' : 'Select CSV File'}
             </Text>
@@ -168,9 +174,9 @@ export default function AddScreen() {
                 </Text>
               </View>
             ))}
-            {parseCSV.length > 3 && (
+            {preview.length > 5 && (
               <Text style={styles.moreItems}>
-                And {parseCSV.length - 3} more cards...
+                And {preview.length - 5} more cards...
               </Text>
             )}
           </View>
