@@ -1,5 +1,5 @@
 // Простая in-memory база данных для карточек и сетов
-import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { parseCSV, CSVParseError } from './csv-parser';
 import { groceryStoreData } from './data/grocery-store-data';
@@ -30,8 +30,8 @@ export type CardSet = {
   archivedCards: number;
 };
 
-const SETS_DIR = FileSystem.documentDirectory + 'sets/';
 const PROGRESS_STORAGE_KEY = 'moinaki_card_progress';
+const SETS_STORAGE_KEY = 'moinaki_sets_data';
 
 // Палитра кислотных цветов
 const ACID_COLORS = [
@@ -90,16 +90,20 @@ function dataToCSV(data: any[]): string {
   return headers + rows.join('\n');
 }
 
-async function ensurePresetFiles() {
-  await FileSystem.makeDirectoryAsync(SETS_DIR, { intermediates: true }).catch(() => {});
-  for (const preset of PRESET_SETS) {
-    const dest = SETS_DIR + preset.name;
-    const exists = await FileSystem.getInfoAsync(dest);
-    if (!exists.exists) {
-      // Создаем CSV файл из предустановленных данных
-      const csvContent = dataToCSV(preset.data);
-      await FileSystem.writeAsStringAsync(dest, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+async function ensurePresetSets() {
+  try {
+    const existingSets = await AsyncStorage.getItem(SETS_STORAGE_KEY);
+    if (!existingSets) {
+      // Создаем предустановленные сеты при первом запуске
+      const defaultSets: Record<string, string> = {};
+      for (const preset of PRESET_SETS) {
+        const csvContent = dataToCSV(preset.data);
+        defaultSets[preset.name] = csvContent;
+      }
+      await AsyncStorage.setItem(SETS_STORAGE_KEY, JSON.stringify(defaultSets));
     }
+  } catch (error) {
+    console.error('Error ensuring preset sets:', error);
   }
 }
 
@@ -122,60 +126,62 @@ async function saveProgressToStorage(progress: Record<string, { successCount: nu
 }
 
 async function loadSetsAndCards() {
-  sets = [];
-  cards = [];
-  const progressData = await loadProgressFromStorage();
-  const files = await FileSystem.readDirectoryAsync(SETS_DIR);
-  let setIndex = 0;
-  for (const fileName of files) {
-    if (!fileName.endsWith('.csv')) continue;
-    const fileUri = SETS_DIR + fileName;
+  try {
+    sets = [];
+    cards = [];
+    const progressData = await loadProgressFromStorage();
+    const setsData = await AsyncStorage.getItem(SETS_STORAGE_KEY);
     
-    try {
-      const content = await FileSystem.readAsStringAsync(fileUri);
-      const parsed = parseCSV(content);
-      const setId = fileName;
-      
-      // Определяем цвет: для предустановленных файлов используем заданный, для новых - рандомный
-      const presetFile = PRESET_SETS.find(p => p.name === fileName);
-      const color = presetFile ? presetFile.color : getRandomAcidColor();
-      const icon = presetFile ? presetFile.icon : '📚';
-      
-      sets.push({
-        id: setId,
-        name: fileName.replace('.csv', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        fileName,
-        color: color,
-        icon: icon,
-        learnedCards: 0,
-        totalCards: parsed.length,
-        archivedCards: 0,
-      });
-      
-      for (const item of parsed) {
-        const cardId = `${setId}-${item.word}`;
-        const savedProgress = progressData[cardId] || { successCount: 0, isArchived: false, lastReviewed: 0 };
-        cards.push({
-          id: cardId,
-          word: item.word,
-          translation: item.translation,
-          sentences: Array.isArray(item.sentences) ? item.sentences : [],
-          repeatCount: 0,
-          status: 'learning',
-          setId,
-          successCount: savedProgress.successCount,
-          isArchived: savedProgress.isArchived,
-          lastReviewed: savedProgress.lastReviewed,
+    if (!setsData) {
+      console.log('No sets data found');
+      return;
+    }
+    
+    const parsedSets: Record<string, string> = JSON.parse(setsData);
+    
+    for (const [fileName, content] of Object.entries(parsedSets)) {
+      try {
+        const parsed = parseCSV(content);
+        const setId = fileName;
+        
+        // Определяем цвет: для предустановленных файлов используем заданный, для новых - рандомный
+        const presetFile = PRESET_SETS.find(p => p.name === fileName);
+        const color = presetFile ? presetFile.color : getRandomAcidColor();
+        const icon = presetFile ? presetFile.icon : '📚';
+        
+        sets.push({
+          id: setId,
+          name: fileName.replace('.csv', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          fileName,
+          color: color,
+          icon: icon,
+          learnedCards: 0,
+          totalCards: parsed.length,
+          archivedCards: 0,
         });
-      }
-      setIndex++;
-    } catch (error) {
-      console.error(`Error loading file ${fileName}:`, error);
-      // Пропускаем поврежденные файлы, но логируем ошибку
-      if (error instanceof CSVParseError) {
-        console.warn(`Skipping corrupted CSV file ${fileName}: ${error.message}`);
+        
+        for (const item of parsed) {
+          const cardId = `${setId}-${item.word}`;
+          const savedProgress = progressData[cardId] || { successCount: 0, isArchived: false, lastReviewed: 0 };
+          cards.push({
+            id: cardId,
+            word: item.word,
+            translation: item.translation,
+            sentences: Array.isArray(item.sentences) ? item.sentences : [],
+            repeatCount: 0,
+            status: 'learning',
+            setId,
+            successCount: savedProgress.successCount,
+            isArchived: savedProgress.isArchived,
+            lastReviewed: savedProgress.lastReviewed,
+          });
+        }
+      } catch (error) {
+        console.error(`Error parsing set ${fileName}:`, error);
       }
     }
+  } catch (error) {
+    console.error('Error loading sets and cards:', error);
   }
 }
 
@@ -183,7 +189,7 @@ export const database = {
   async init() {
     if (initialized) return;
     initialized = true;
-    await ensurePresetFiles();
+    await ensurePresetSets();
     await loadSetsAndCards();
   },
 
@@ -209,8 +215,13 @@ export const database = {
       parseCSV(csvContent);
       
       const fileName = name.replace(/\s+/g, '_').toLowerCase() + '.csv';
-      const fileUri = SETS_DIR + fileName;
-      await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+      
+      // Сохраняем в AsyncStorage
+      const existingSets = await AsyncStorage.getItem(SETS_STORAGE_KEY);
+      const setsData = existingSets ? JSON.parse(existingSets) : {};
+      setsData[fileName] = csvContent;
+      await AsyncStorage.setItem(SETS_STORAGE_KEY, JSON.stringify(setsData));
+      
       await loadSetsAndCards();
       return fileName;
     } catch (error) {
@@ -290,8 +301,13 @@ export const database = {
   },
 
   async deleteCardSet(setId: string): Promise<void> {
-    const fileUri = SETS_DIR + setId;
-    await FileSystem.deleteAsync(fileUri, { idempotent: true });
+    // Удаляем сет из AsyncStorage
+    const existingSets = await AsyncStorage.getItem(SETS_STORAGE_KEY);
+    if (existingSets) {
+      const setsData = JSON.parse(existingSets);
+      delete setsData[setId];
+      await AsyncStorage.setItem(SETS_STORAGE_KEY, JSON.stringify(setsData));
+    }
     
     // Удаляем прогресс для карточек этого сета
     const progressData = await loadProgressFromStorage();
