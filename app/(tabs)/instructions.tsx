@@ -24,6 +24,16 @@ export default function InstructionsScreen() {
       <Text style={styles.text}>
         The app comes with some preinstalled sets. You can add your own at any time.
       </Text>
+      <Text style={styles.sectionTitle}>5. Generate Custom Sets</Text>
+      <Text style={styles.text}>
+        You can generate custom flashcard sets using our AI assistant at:
+      </Text>
+      <Text style={styles.link}>
+        https://chatgpt.com/g/g-687f6168cfb88191846b5f9463ab586b-moinaki-card-builder?model=gpt-4o
+      </Text>
+      <Text style={styles.text}>
+        The AI will help you create properly formatted CSV files for any topic you want to learn.
+      </Text>
     </ScrollView>
   );
 }
@@ -56,6 +66,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     padding: 8,
     borderRadius: 8,
+    marginBottom: 8,
+  },
+  link: {
+    fontSize: 14,
+    color: '#007AFF',
+    textDecorationLine: 'underline',
     marginBottom: 8,
   },
 }); 

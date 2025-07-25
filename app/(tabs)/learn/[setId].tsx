@@ -92,7 +92,7 @@ export default function LearnScreen() {
     // Auto move to next card after 2 seconds
     setTimeout(() => {
       moveToNextCard();
-    }, 2000);
+    }, 3000);
   };
 
   const moveToNextCard = () => {
@@ -213,10 +213,21 @@ export default function LearnScreen() {
               {options.map((option, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.optionButton}
+                  style={[
+                    styles.optionButton,
+                    selectedAnswer === option && showResult && isCorrect && styles.correctOption,
+                    selectedAnswer === option && showResult && !isCorrect && styles.incorrectOption,
+                  ]}
                   onPress={() => handleAnswerSelect(option)}
+                  disabled={showResult}
                 >
-                  <Text style={styles.optionText}>{option}</Text>
+                  <Text style={[
+                    styles.optionText,
+                    selectedAnswer === option && showResult && isCorrect && styles.correctOptionText,
+                    selectedAnswer === option && showResult && !isCorrect && styles.incorrectOptionText,
+                  ]}>
+                    {option}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -245,7 +256,25 @@ export default function LearnScreen() {
                 <Text style={styles.correctAnswer}>{currentCard.translation}</Text>
               </View>
 
-              {showSentences()}
+              {currentCard.sentences && currentCard.sentences.length > 0 && (
+                <View style={styles.sentencesContainer}>
+                  <Text style={styles.sentencesTitle}>Example sentences:</Text>
+                  {currentCard.sentences.slice(0, 3).map((sentence, index) => (
+                    <Text key={index} style={styles.sentence}>
+                      {sentence.split(new RegExp(`(\\b${currentCard.word}\\b)`, 'gi')).map((part, partIndex) => {
+                        if (part.toLowerCase() === currentCard.word.toLowerCase()) {
+                          return (
+                            <Text key={partIndex} style={styles.highlightedWord}>
+                              {part}
+                            </Text>
+                          );
+                        }
+                        return part;
+                      })}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </Animated.View>
           )}
         </View>
@@ -346,6 +375,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF1493',
   },
+  correctOption: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  incorrectOption: {
+    backgroundColor: '#FF6347',
+    borderColor: '#FF6347',
+  },
+  correctOptionText: {
+    color: '#ffffff',
+  },
+  incorrectOptionText: {
+    color: '#ffffff',
+  },
   resultContainer: {
     alignItems: 'center',
   },
@@ -375,6 +418,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#10B981',
+  },
+  sentencesContainer: {
+    width: '100%',
+    marginTop: 20,
+  },
+  sentencesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 10,
+  },
+  sentence: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  highlightedWord: {
+    color: '#10B981',
+    fontWeight: 'bold',
   },
   sentencesContainer: {
     width: '100%',
