@@ -163,11 +163,23 @@ async function loadSetsAndCards() {
         for (const item of parsed) {
           const cardId = `${setId}-${item.word}`;
           const savedProgress = progressData[cardId] || { successCount: 0, isArchived: false, lastReviewed: 0 };
+          
+          // Ensure sentences is always an array
+          let sentences = [];
+          if (item.sentences) {
+            if (Array.isArray(item.sentences)) {
+              sentences = item.sentences;
+            } else if (typeof item.sentences === 'string') {
+              // Split by | and clean up
+              sentences = item.sentences.split('|').map(s => s.trim()).filter(s => s.length > 0);
+            }
+          }
+          
           cards.push({
             id: cardId,
             word: item.word,
             translation: item.translation,
-            sentences: Array.isArray(item.sentences) ? item.sentences : [],
+            sentences: sentences,
             repeatCount: 0,
             status: 'learning',
             setId,

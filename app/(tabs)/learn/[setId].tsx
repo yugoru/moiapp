@@ -390,6 +390,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF1493',
   },
+  selectedOption: {
+    backgroundColor: '#FFE4E1',
+    borderColor: '#FF1493',
+  },
+  selectedOptionText: {
+    color: '#FF1493',
+  },
   correctOption: {
     backgroundColor: '#10B981',
     borderColor: '#10B981',
@@ -434,9 +441,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#10B981',
   },
+  wrongAnswerContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  wrongAnswerLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 5,
+  },
+  wrongAnswer: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF6347',
+  },
   sentencesContainer: {
     width: '100%',
-    marginTop: 20,
+    marginTop: 15,
   },
   sentencesTitle: {
     fontSize: 16,
@@ -449,29 +472,16 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 24,
     marginBottom: 8,
+    paddingLeft: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF1493',
   },
   highlightedWord: {
     color: '#10B981',
     fontWeight: 'bold',
-  },
-  sentencesContainer: {
-    width: '100%',
-  },
-  sentencesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 10,
-  },
-  sentence: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-    marginBottom: 8,
-  },
-  highlightedWord: {
-    color: '#10B981',
-    fontWeight: 'bold',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 2,
+    borderRadius: 3,
   },
   progressContainer: {
     backgroundColor: '#ffffff',
