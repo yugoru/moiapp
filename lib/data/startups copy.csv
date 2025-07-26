@@ -1,0 +1,60 @@
+word,translation,sentences
+assess,оценивать,We assessed several investor offers last month.|Let's assess the current situation before acting.|We need to assess the risks carefully.
+allocate,распределять,We’ve allocated resources to product testing.|They allocated time for onboarding.|Let’s allocate budget to marketing.
+enhance,улучшить,This update will enhance the user experience.|They enhanced performance by refactoring the code.|We aim to enhance client satisfaction.
+struggle,испытывать трудности,Many founders struggle with focus and priorities.|He struggles to find product-market fit.|We all struggle sometimes with growth.
+sustain,поддерживать,We need a model that can sustain rapid growth.|Can we sustain this level of service?|It's hard to sustain momentum without funding.
+viable,жизнеспособный,It's a viable option for small teams.|We’re looking for a viable business model.|That solution isn't viable long term.
+scattered,рассеянный,Our audience is scattered across multiple markets.|The data is scattered across systems.|Our team is scattered globally.
+overwhelmed,перегруженный,I felt overwhelmed by investor questions.|She’s overwhelmed with tasks.|We’re overwhelmed by user feedback.
+insightful,проницательный,We had an insightful call with a potential partner.|Your feedback was very insightful.|That was an insightful analysis.
+tentative,предварительный,"We’ve had a few tentative conversations with VCs.|This is a tentative plan, not final.|Their interest is still tentative."
+syndicate,синдикат,We joined a syndicate for our seed round.|The syndicate included top-tier investors.|Forming a syndicate helped us secure more capital.
+dilution,размывание долей,We’re concerned about equity dilution in the next round.|Dilution affects all early stakeholders.|The founder protected against dilution.
+preseed,предпосевной этап,The startup secured preseed funding from an angel.|Preseed rounds are often informal.|We used the preseed to build our core team.
+turnaround,переломный момент,The new strategy led to a full turnaround.|We hired a CEO experienced in turnarounds.|This product update could be our turnaround.
+de-risk,снижать риски,We de-risked the launch by testing with beta users.|A/B testing helps de-risk new features.|The investor asked how we’re de-risking growth.
+churn,отток клиентов,High churn was killing our SaaS margins.|Reducing churn became our top priority.|Churn rates spiked after the pricing change.
+CAC,стоимость привлечения клиента,Our CAC dropped after optimizing ads.|We monitor CAC weekly to control costs.|High CAC hurts unit economics.
+LTV,пожизненная ценность клиента,LTV should exceed CAC by at least 3x.|We recalculated LTV after the product update.|A higher LTV made our case for fundraising.
+cliff,грейс-период (в опционах),"The cliff ends after 12 months of vesting.|Most startup equity plans include a cliff.|He left before the cliff, so got nothing."
+vesting,вэстинг,The cofounder agreement includes a 4-year vesting.|Vesting protects the company from early exits.|She was fully vested after four years.
+overhead,накладные расходы,We reduced overhead by using contractors.|Low overhead gave us flexibility.|Office rent was our biggest overhead.
+headcount,численность персонала,We froze headcount during the downturn.|Headcount doubled in six months.|Controlling headcount keeps burn low.
+runrate,текущий темп,Our runrate is $2M ARR.|Runrate helps estimate future revenues.|Investors asked for our Q2 runrate.
+inflection,точка перегиба,We’re nearing an inflection point in growth.|An inflection point often signals maturity.|The app’s virality created that inflection.
+sandbox,тестовая среда,We used a sandbox for fintech integration.|Developers tested the feature in sandbox.|The sandbox protects live user data.
+acqui-hire,поглощение ради команды,We were acqui-hired by a bigger firm.|The acqui-hire brought in top engineers.|Acqui-hires are common in tech talent wars.
+freemium,модель фримиум,The product follows a freemium model.|Freemium helped us build a user base fast.|We converted 8% of freemium users.
+backlog,список задач,We have 50 tickets in the product backlog.|The backlog grew after user feedback.|We review the backlog every sprint.
+white-label,продукт без бренда,We offer a white-label solution for partners.|White-label apps are resold under other brands.|The white-label deal boosted revenue.
+freight,грузоперевозка,Our freight costs rose due to delays.|Freight issues slowed our hardware launch.|We switched freight providers for speed.
+compliance,соответствие требованиям,We updated our app for GDPR compliance.|Compliance is key in fintech.|Legal helped us with compliance.
+attrition,текучесть кадров,Team attrition was unusually high last quarter.|We tracked attrition monthly.|Attrition affects morale and hiring.
+rollout,выпуск (функции/продукта),The rollout was staggered by region.|We delayed the rollout due to bugs.|A smooth rollout builds trust.
+benchmark,ориентир,We benchmarked against top startups.|Benchmarks help set realistic goals.|Our revenue benchmark is $100K MRR.
+techstack,технологический стек,We changed our techstack for scalability.|The CTO reviewed our current techstack.|Our techstack uses Node.js and React.
+self-serve,самообслуживание,We built a self-serve onboarding process.|Self-serve models scale better.|The dashboard supports self-serve clients.
+rate limit,ограничение скорости запросов,We hit the API’s rate limit.|Rate limits protect our backend.|We raised the rate limit for premium users.
+retargeting,ретаргетинг,We used retargeting ads on LinkedIn.|Retargeting boosted conversions.|Retargeting requires tracking pixels.
+sandboxing,изоляция среды,Sandboxing protects against malicious code.|We enabled sandboxing in the browser.|App sandboxing improved security.
+go-to-market,выход на рынок,We finalized our go-to-market plan.|A good go-to-market shortens time to revenue.|The team worked on go-to-market messaging.
+onboarding,введение в работу,We simplified user onboarding.|Good onboarding improves activation.|We tested onboarding flows with users.
+referral,реферальная программа,Referral traffic increased signups.|We launched a referral program.|Referral codes boosted engagement.
+comms,коммуникации,Internal comms were messy at first.|We streamlined client comms.|Comms strategy is part of the rebrand.
+telemetry,телеметрия,The app sends telemetry to monitor usage.|Telemetry helps detect crashes.|We added telemetry to the backend.
+userbase,аудитория пользователей,We grew the userbase by 40%.|Our userbase is mostly mobile-first.|The userbase shifted after the redesign.
+waitlist,лист ожидания,"10,000 signed up on our waitlist.|The waitlist helped create buzz.|We invited users off the waitlist weekly."
+time-to-value,время до получения ценности,We optimized time-to-value for new users.|Time-to-value impacts retention.|Shorter time-to-value drives loyalty.
+tech debt,технический долг,We paused new features to fix tech debt.|Tech debt slows development.|Reducing tech debt is a 2024 goal.
+resilience,устойчивость,Resilience is key in volatile markets.|Our systems showed great resilience.|The team’s resilience impressed investors.
+revenue stream,источник дохода,We added a second revenue stream.|Subscriptions are our main revenue stream.|New revenue streams reduce risk.
+cross-sell,допродажа,We cross-sell services during onboarding.|Cross-selling improved revenue per user.|The dashboard suggests cross-sells.
+red flag,тревожный сигнал,That churn rate was a red flag.|Investors saw the delay as a red flag.|Founders must spot red flags early.
+cold start,эффект холодного старта,Marketplaces face a cold start problem.|We solved cold start with early partnerships.|The cold start phase lasted 3 months.
+rate card,прайс-лист,Our agency sent a new rate card.|The rate card lists hourly fees.|We adjusted the rate card post-rebrand.
+walkthrough,пошаговая инструкция,We created a product walkthrough.|Walkthroughs help new users quickly.|The demo includes a full walkthrough.
+offboarding,увольнение,We standardized offboarding procedures.|Offboarding includes access removal.|Offboarding was handled smoothly.
+usage cap,лимит использования,The free tier has a usage cap.|We increased usage caps for teams.|Usage caps prevent overage costs.
+lifecycle,жизненный цикл,The customer lifecycle has five stages.|Lifecycle marketing improved retention.|We map each user’s lifecycle.
+

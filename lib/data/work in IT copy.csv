@@ -1,0 +1,51 @@
+word,translation,sentences
+execute,выполнять,Execute the script.|She executed the query.|They executed the test.
+encrypt,шифровать,Encrypt the data.|She encrypted the files.|They need to encrypt everything.
+lightweight,легковесный,The library is lightweight.|He uses lightweight tools.|They need a lightweight app.
+backup,создавать резервную копию,Backup the database.|He backed up the system.|They back up daily.
+configure,настраивать,Please configure the server.|He configured it yesterday.|They are configuring the settings.
+fast,быстрый,The app is fast.|He made it run fast.|They optimized it to be fast.
+scalable,масштабируемый,Our product is scalable.|She created a scalable API.|They want scalable infrastructure.
+responsive,адаптивный,The site is responsive.|She built a responsive UI.|They want it to be responsive.
+sync,синхронизировать,Sync your data.|She synced her files.|They sync regularly.
+build,собирать,Build the project.|He built the app.|They are building a new module.
+dynamic,динамичный,The content is dynamic.|He made a dynamic page.|They created dynamic features.
+robust,надежный,The solution is robust.|She built a robust backend.|They want a robust system.
+log,регистрировать,Log the events.|She logged the errors.|They log every action.
+simulate,моделировать,Simulate the scenario.|He simulated a crash.|They simulate user behavior.
+reliable,надежный,The app is reliable.|He built a reliable service.|They want reliable systems.
+intuitive,интуитивно понятный,The interface is intuitive.|She designed an intuitive UI.|They want intuitive tools.
+crash,сбоить,The app crashed again.|It crashed during testing.|They fixed the crash.
+modular,модульный,The design is modular.|He prefers modular code.|They use a modular system.
+maintainable,удобный для поддержки,The code is maintainable.|He writes maintainable code.|They made it maintainable.
+automate,автоматизировать,We automate tasks.|He automated the tests.|They automate deployments.
+push,отправлять в репозиторий,Push your changes now.|She pushed it to Git.|They pushed the update.
+scalable,масштабируемый,The backend is scalable.|He implemented scalable features.|They chose scalable tech.
+optimize,оптимизировать,We must optimize the performance.|She optimized the algorithm.|They are optimizing the code.
+debug,отлаживать,I need to debug this code.|She is debugging the application.|They spent hours debugging the issue.
+refactor,рефакторить,Let's refactor the code.|She refactored the function.|They are refactoring the project.
+cross-platform,кроссплатформенный,The app is cross-platform.|She built a cross-platform tool.|They develop cross-platform apps.
+install,устанавливать,Install the software.|He installed the package.|They installed it already.
+test,тестировать,Test the application.|He tested it yesterday.|They test often.
+performant,высокопроизводительный,The tool is performant.|She made it performant.|They want performant apps.
+launch,запускать,Launch the application.|He launched the tool.|They launched a new version.
+agile,гибкий,We use agile methods.|She works in an agile team.|They have an agile workflow.
+compile,компилировать,I will compile the code now.|He compiled it successfully.|The system compiles it automatically.
+legacy,устаревший,The system is legacy.|He works on legacy code.|They support legacy apps.
+efficient,эффективный,The code is efficient.|She wrote efficient logic.|They aim for efficient solutions.
+monitor,мониторить,We monitor server logs.|She monitors the system.|They monitor all services.
+restore,восстанавливать,Restore the backup.|She restored the settings.|They restored the system.
+merge,сливать,Merge your branch.|She merged the changes.|They merged it successfully.
+pull,загружать из репозитория,Pull the latest version.|He pulled the changes.|They pulled it successfully.
+integrate,интегрировать,We need to integrate this service.|She integrated the module.|They are integrating the payment system.
+secure,безопасный,The platform is secure.|He secured the connection.|They use secure methods.
+design,проектировать,I design user interfaces.|She designed the system.|They design with Figma.
+decrypt,расшифровывать,Decrypt the message.|He decrypted the file.|They decrypted the content.
+test,тестировать,We test the software daily.|She is testing the feature.|They tested the update.
+customizable,настраиваемый,The software is customizable.|She built a customizable UI.|They like customizable features.
+develop,разрабатывать,We develop mobile apps.|He develops software tools.|They are developing a platform.
+document,документировать,Document the process.|He documented the function.|They documented everything.
+configure,настраивать,Configure the settings.|She configured it well.|They configured the network.
+buggy,с багами,The app is buggy.|She fixed a buggy feature.|They found buggy code.
+clean,чистый,The code is clean.|He writes clean functions.|They want clean structure.
+commit,фиксировать изменения,I will commit the updates.|He committed the file.|They commit every day.
