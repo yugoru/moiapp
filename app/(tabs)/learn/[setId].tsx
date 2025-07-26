@@ -69,11 +69,21 @@ export default function LearnScreen() {
     if (showResult) return;
 
     setSelectedAnswer(answer);
-    setShowResult(true);
     
     const currentCard = cards[currentCardIndex];
     const correct = answer === currentCard.translation;
     setIsCorrect(correct);
+    
+    // Show result after a brief delay to highlight the selection
+    setTimeout(() => {
+      setShowResult(true);
+      
+      // Animate result
+      Animated.spring(resultAnimation, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    }, 500);
     
     if (correct) {
       setCorrectAnswers(prev => prev + 1);
@@ -83,16 +93,10 @@ export default function LearnScreen() {
     // Update card progress
     database.updateCardProgress(currentCard.id, correct);
 
-    // Animate result
-    Animated.spring(resultAnimation, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-
     // Auto move to next card after 2 seconds
     setTimeout(() => {
       moveToNextCard();
-    }, 3000);
+    }, 3500);
   };
 
   const moveToNextCard = () => {
@@ -215,16 +219,14 @@ export default function LearnScreen() {
                   key={index}
                   style={[
                     styles.optionButton,
-                    selectedAnswer === option && showResult && isCorrect && styles.correctOption,
-                    selectedAnswer === option && showResult && !isCorrect && styles.incorrectOption,
+                    selectedAnswer === option && !showResult && styles.selectedOption,
                   ]}
                   onPress={() => handleAnswerSelect(option)}
                   disabled={showResult}
                 >
                   <Text style={[
                     styles.optionText,
-                    selectedAnswer === option && showResult && isCorrect && styles.correctOptionText,
-                    selectedAnswer === option && showResult && !isCorrect && styles.incorrectOptionText,
+                    selectedAnswer === option && !showResult && styles.selectedOptionText,
                   ]}>
                     {option}
                   </Text>
@@ -254,14 +256,26 @@ export default function LearnScreen() {
               <View style={styles.correctAnswerContainer}>
                 <Text style={styles.correctAnswerLabel}>Correct answer:</Text>
                 <Text style={styles.correctAnswer}>{currentCard.translation}</Text>
+                
+                {/* Show which option was selected */}
+                {!isCorrect && (
+                  <View style={styles.wrongAnswerContainer}>
+                    <Text style={styles.wrongAnswerLabel}>Your answer:</Text>
+                    <Text style={styles.wrongAnswer}>{selectedAnswer}</Text>
+                  </View>
+                )}
               </View>
 
               {currentCard.sentences && currentCard.sentences.length > 0 && (
                 <View style={styles.sentencesContainer}>
                   <Text style={styles.sentencesTitle}>Example sentences:</Text>
-                  {currentCard.sentences.slice(0, 3).map((sentence, index) => (
+                  {currentCard.sentences.slice(0, 3).map((sentence, index) => {
+                    // Split sentence by the word to highlight it
+                    const parts = sentence.split(new RegExp(`(\\b${currentCard.word}\\b)`, 'gi'));
+                    
+                    return (
                     <Text key={index} style={styles.sentence}>
-                      {sentence.split(new RegExp(`(\\b${currentCard.word}\\b)`, 'gi')).map((part, partIndex) => {
+                      {parts.map((part, partIndex) => {
                         if (part.toLowerCase() === currentCard.word.toLowerCase()) {
                           return (
                             <Text key={partIndex} style={styles.highlightedWord}>
@@ -272,7 +286,8 @@ export default function LearnScreen() {
                         return part;
                       })}
                     </Text>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
             </Animated.View>
