@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react-native';
+import { ArrowLeft, CircleCheck as CheckCircle, Circle as XCircle } from 'lucide-react-native';
 import { database, Card } from '@/lib/database';
 import { generateOptions } from '@/lib/answer-generator';
 
