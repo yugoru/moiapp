@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, CircleCheck as CheckCircle, Circle as XCircle } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react-native';
 import { database, Card } from '@/lib/database';
 import { generateOptions } from '@/lib/answer-generator';
 
@@ -20,9 +20,6 @@ export default function LearnScreen() {
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [isArchivedMode, setIsArchivedMode] = useState(false);
 
-  // Animation values
-  const cardAnimation = new Animated.Value(1);
-
   const loadCards = async () => {
     try {
       const loadedCards = await database.getCardsForLearning(String(setId), 10);
@@ -33,7 +30,6 @@ export default function LearnScreen() {
         return;
       }
       
-      // Проверяем, все ли карточки архивные
       const allArchived = loadedCards.every(card => card.isArchived);
       setIsArchivedMode(allArchived);
       
@@ -50,11 +46,9 @@ export default function LearnScreen() {
 
   const generateAnswerOptions = async (currentCard: Card) => {
     try {
-      // Get all cards from the same set for generating wrong options
       const allCards = await database.getCardsForLearning(String(setId), 100);
       const allTranslations = allCards.map(card => card.translation);
       const generatedOptions = generateOptions(currentCard.translation, allTranslations);
-
       setOptions(generatedOptions);
     } catch (error) {
       console.error('Error generating options:', error);
@@ -81,36 +75,19 @@ export default function LearnScreen() {
     }
     setTotalAnswered(prev => prev + 1);
 
-    // Update card progress
     database.updateCardProgress(currentCard.id, correct);
   };
 
   const handleScreenTap = () => {
     if (screenState === 'result') {
-      // Переход к предложениям
       setScreenState('sentences');
     } else if (screenState === 'sentences') {
-      // Переход к следующей карточке
       moveToNextCard();
     }
   };
 
   const moveToNextCard = () => {
     if (currentCardIndex < cards.length - 1) {
-      // Animate card transition
-      Animated.sequence([
-        Animated.timing(cardAnimation, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardAnimation, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
       const nextIndex = currentCardIndex + 1;
       setCurrentCardIndex(nextIndex);
       setSelectedAnswer(null);
@@ -118,7 +95,6 @@ export default function LearnScreen() {
       setIsCorrect(false);
       generateAnswerOptions(cards[nextIndex]);
     } else {
-      // Finished all cards
       Alert.alert(
         'Session Complete!',
         `You answered ${correctAnswers} out of ${totalAnswered} correctly.`,
@@ -131,9 +107,6 @@ export default function LearnScreen() {
 
   const getOptionStyle = (option: string) => {
     if (screenState === 'question') {
-      if (selectedAnswer === option) {
-        return styles.selectedOption;
-      }
       return styles.optionButton;
     }
     
@@ -155,9 +128,6 @@ export default function LearnScreen() {
 
   const getOptionTextStyle = (option: string) => {
     if (screenState === 'question') {
-      if (selectedAnswer === option) {
-        return styles.selectedOptionText;
-      }
       return styles.optionText;
     }
     
@@ -195,7 +165,7 @@ export default function LearnScreen() {
   }
 
   const renderQuestionScreen = () => (
-    <Animated.View style={[styles.cardContainer, { opacity: cardAnimation }]}>
+    <View style={styles.cardContainer}>
       <View style={styles.card}>
         <Text style={styles.word}>{currentCard.word}</Text>
         
@@ -214,12 +184,12 @@ export default function LearnScreen() {
           ))}
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 
   const renderResultScreen = () => (
     <Pressable style={styles.fullScreenPressable} onPress={handleScreenTap}>
-      <Animated.View style={[styles.cardContainer, { opacity: cardAnimation }]}>
+      <View style={styles.cardContainer}>
         <View style={styles.card}>
           <Text style={styles.word}>{currentCard.word}</Text>
           
@@ -251,49 +221,63 @@ export default function LearnScreen() {
             <Text style={styles.tapHint}>Tap anywhere to continue</Text>
           </View>
         </View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 
-  const renderSentencesScreen = () => (
-    <Pressable style={styles.fullScreenPressable} onPress={handleScreenTap}>
-      <Animated.View style={[styles.cardContainer, { opacity: cardAnimation }]}>
-        <View style={styles.card}>
-          <Text style={styles.word}>{currentCard.word}</Text>
-          <Text style={styles.translation}>{currentCard.translation}</Text>
-          
-          <View style={styles.sentencesContainer}>
-            <Text style={styles.sentencesTitle}>Example sentences:</Text>
-            {currentCard.sentences && currentCard.sentences.length > 0 ? (
-              currentCard.sentences.slice(0, 3).map((sentence, index) => {
-                // Split sentence by the word to highlight it
-                const parts = sentence.split(new RegExp(`(\\b${currentCard.word}\\b)`, 'gi'));
-                
-                return (
-                  <Text key={index} style={styles.sentence}>
-                    {parts.map((part, partIndex) => {
-                      if (part.toLowerCase() === currentCard.word.toLowerCase()) {
-                        return (
-                          <Text key={partIndex} style={styles.highlightedWord}>
-                            {part}
-                          </Text>
-                        );
-                      }
-                      return part;
-                    })}
-                  </Text>
-                );
-              })
-            ) : (
-              <Text style={styles.noSentences}>No example sentences available</Text>
-            )}
+  const renderSentencesScreen = () => {
+    // Парсим предложения из строки, разделенной |
+    let sentences = [];
+    if (currentCard.sentences && Array.isArray(currentCard.sentences)) {
+      sentences = currentCard.sentences;
+    } else if (currentCard.sentences && typeof currentCard.sentences === 'string') {
+      sentences = currentCard.sentences.split('|').map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    return (
+      <Pressable style={styles.fullScreenPressable} onPress={handleScreenTap}>
+        <View style={styles.cardContainer}>
+          <View style={styles.card}>
+            <Text style={styles.word}>{currentCard.word}</Text>
+            <Text style={styles.translation}>{currentCard.translation}</Text>
+            
+            <View style={styles.sentencesContainer}>
+              <Text style={styles.sentencesTitle}>Example sentences:</Text>
+              {sentences.length > 0 ? (
+                sentences.slice(0, 3).map((sentence, index) => {
+                  // Разделяем предложение для подсветки слова
+                  const regex = new RegExp(`\\b${currentCard.word}\\b`, 'gi');
+                  const parts = sentence.split(regex);
+                  const matches = sentence.match(regex) || [];
+                  
+                  return (
+                    <View key={index} style={styles.sentenceContainer}>
+                      <Text style={styles.sentence}>
+                        {parts.map((part, partIndex) => (
+                          <React.Fragment key={partIndex}>
+                            <Text style={styles.sentenceText}>{part}</Text>
+                            {matches[partIndex] && (
+                              <Text style={styles.highlightedWord}>
+                                {matches[partIndex]}
+                              </Text>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </Text>
+                    </View>
+                  );
+                })
+              ) : (
+                <Text style={styles.noSentences}>No example sentences available</Text>
+              )}
+            </View>
+            
+            <Text style={styles.tapHint}>Tap anywhere to continue</Text>
           </View>
-          
-          <Text style={styles.tapHint}>Tap anywhere to continue</Text>
         </View>
-      </Animated.View>
-    </Pressable>
-  );
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -423,13 +407,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF1493',
   },
-  selectedOption: {
-    backgroundColor: '#FFE4E1',
-    borderColor: '#FF1493',
-  },
-  selectedOptionText: {
-    color: '#FF1493',
-  },
   correctOption: {
     backgroundColor: '#10B981',
     borderColor: '#10B981',
@@ -468,14 +445,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
-  sentence: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
+  sentenceContainer: {
     marginBottom: 12,
     paddingLeft: 15,
     borderLeftWidth: 3,
     borderLeftColor: '#FF1493',
+  },
+  sentence: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  sentenceText: {
+    color: '#374151',
   },
   highlightedWord: {
     color: '#FF1493',
