@@ -17,6 +17,7 @@ export type Card = {
   successCount: number;
   isArchived: boolean;
   lastReviewed: number;
+  errorCount: number;
 };
 
 export type CardSet = {
@@ -28,10 +29,13 @@ export type CardSet = {
   learnedCards: number;
   totalCards: number;
   archivedCards: number;
+  lastCardIndex: number;
+  totalErrors: number;
 };
 
 const PROGRESS_STORAGE_KEY = 'moinaki_card_progress';
 const SETS_STORAGE_KEY = 'moinaki_sets_data';
+const SET_PROGRESS_STORAGE_KEY = 'moinaki_set_progress';
 
 // Палитра кислотных цветов
 const ACID_COLORS = [
@@ -53,13 +57,13 @@ const ACID_COLORS = [
 const PRESET_SETS = [
   { 
     name: 'grocery store.csv', 
-    data: groceryStoreData, 
+    data: require('./data/common-phrasal-verbs-data').commonPhrasalVerbsData,
     color: '#FF1493', 
     icon: '🛒' 
   },
   { 
     name: 'startups.csv', 
-    data: startupsData, 
+    data: require('./data/business-english-data').businessEnglishData,
     color: '#00BFFF', 
     icon: '🚀' 
   },
@@ -125,11 +129,29 @@ async function saveProgressToStorage(progress: Record<string, { successCount: nu
   }
 }
 
+async function loadSetProgressFromStorage(): Promise<Record<string, { lastCardIndex: number; totalErrors: number }>> {
+  try {
+    const setProgressData = await AsyncStorage.getItem(SET_PROGRESS_STORAGE_KEY);
+    return setProgressData ? JSON.parse(setProgressData) : {};
+  } catch (error) {
+    console.error('Error loading set progress:', error);
+    return {};
+  }
+}
+
+async function saveSetProgressToStorage(setProgress: Record<string, { lastCardIndex: number; totalErrors: number }>) {
+  try {
+    await AsyncStorage.setItem(SET_PROGRESS_STORAGE_KEY, JSON.stringify(setProgress));
+  } catch (error) {
+    console.error('Error saving set progress:', error);
+  }
+}
 async function loadSetsAndCards() {
   try {
     sets = [];
     cards = [];
     const progressData = await loadProgressFromStorage();
+    const setProgressData = await loadSetProgressFromStorage();
     const setsData = await AsyncStorage.getItem(SETS_STORAGE_KEY);
     
     if (!setsData) {
@@ -149,6 +171,8 @@ async function loadSetsAndCards() {
         const color = presetFile ? presetFile.color : getRandomAcidColor();
         const icon = presetFile ? presetFile.icon : '📚';
         
+        const setProgress = setProgressData[setId] || { lastCardIndex: 0, totalErrors: 0 };
+        
         sets.push({
           id: setId,
           name: fileName.replace('.csv', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -158,6 +182,8 @@ async function loadSetsAndCards() {
           learnedCards: 0,
           totalCards: parsed.length,
           archivedCards: 0,
+          lastCardIndex: setProgress.lastCardIndex,
+          totalErrors: setProgress.totalErrors,
         });
         
         for (const item of parsed) {
@@ -186,6 +212,7 @@ async function loadSetsAndCards() {
             successCount: savedProgress.successCount,
             isArchived: savedProgress.isArchived,
             lastReviewed: savedProgress.lastReviewed,
+            errorCount: 0, // Will be calculated from set progress
           });
         }
       } catch (error) {
@@ -251,6 +278,9 @@ export const database = {
   async getCardsForLearning(setId: string, limit: number): Promise<Card[]> {
     await loadSetsAndCards();
     const setCards = cards.filter(card => card.setId === setId);
+    const setProgressData = await loadSetProgressFromStorage();
+    const setProgress = setProgressData[setId] || { lastCardIndex: 0, totalErrors: 0 };
+    
     const archivedCards = setCards.filter(card => card.isArchived);
     const nonArchivedCards = setCards.filter(card => !card.isArchived);
     
@@ -267,7 +297,14 @@ export const database = {
       !card.isArchived || (now - card.lastReviewed) > oneWeek
     );
     
-    return availableCards.slice(0, limit);
+    // Начинаем с последнего изученного слова
+    const startIndex = Math.min(setProgress.lastCardIndex, availableCards.length - 1);
+    const reorderedCards = [
+      ...availableCards.slice(startIndex),
+      ...availableCards.slice(0, startIndex)
+    ];
+    
+    return reorderedCards.slice(0, limit);
   },
 
   async getArchivedCardsForTraining(setId: string, limit: number): Promise<Card[]> {
@@ -299,6 +336,14 @@ export const database = {
         }
       } else {
         card.repeatCount += 1;
+        card.errorCount += 1;
+        
+        // Увеличиваем счетчик ошибок для сета
+        const setProgressData = await loadSetProgressFromStorage();
+        const setProgress = setProgressData[card.setId] || { lastCardIndex: 0, totalErrors: 0 };
+        setProgress.totalErrors += 1;
+        setProgressData[card.setId] = setProgress;
+        await saveSetProgressToStorage(setProgressData);
       }
       
       // Сохраняем прогресс в AsyncStorage
@@ -312,6 +357,18 @@ export const database = {
     }
   },
 
+  async updateSetProgress(setId: string, cardIndex: number): Promise<void> {
+    const setProgressData = await loadSetProgressFromStorage();
+    const setProgress = setProgressData[setId] || { lastCardIndex: 0, totalErrors: 0 };
+    setProgress.lastCardIndex = cardIndex;
+    setProgressData[setId] = setProgress;
+    await saveSetProgressToStorage(setProgressData);
+  },
+
+  async getSetStatistics(setId: string): Promise<{ totalErrors: number; lastCardIndex: number }> {
+    const setProgressData = await loadSetProgressFromStorage();
+    return setProgressData[setId] || { lastCardIndex: 0, totalErrors: 0 };
+  },
   async deleteCardSet(setId: string): Promise<void> {
     // Удаляем сет из AsyncStorage
     const existingSets = await AsyncStorage.getItem(SETS_STORAGE_KEY);
@@ -326,6 +383,11 @@ export const database = {
     const cardIdsToRemove = Object.keys(progressData).filter(id => id.startsWith(setId));
     cardIdsToRemove.forEach(id => delete progressData[id]);
     await saveProgressToStorage(progressData);
+    
+    // Удаляем прогресс сета
+    const setProgressData = await loadSetProgressFromStorage();
+    delete setProgressData[setId];
+    await saveSetProgressToStorage(setProgressData);
     
     await loadSetsAndCards();
   },

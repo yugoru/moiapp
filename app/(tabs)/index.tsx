@@ -131,7 +131,13 @@ export default function HomeScreen() {
                       <Text style={styles.cardStats}>
                         {set.learnedCards} of {set.totalCards} learned
                         {set.archivedCards > 0 && ` • ${set.archivedCards} archived`}
+                        {set.totalErrors > 0 && ` • ${set.totalErrors} errors`}
                       </Text>
+                      {set.lastCardIndex > 0 && (
+                        <Text style={styles.progressInfo}>
+                          Continue from word #{set.lastCardIndex + 1}
+                        </Text>
+                      )}
                     </View>
                     <TouchableOpacity
                       style={styles.deleteButton}
@@ -374,5 +380,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     marginLeft: 4,
+  },
+  progressInfo: {
+    fontSize: 12,
+    color: '#FF1493',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
 });

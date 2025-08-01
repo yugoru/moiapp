@@ -19,6 +19,8 @@ export default function LearnScreen() {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [isArchivedMode, setIsArchivedMode] = useState(false);
+  const [sessionErrors, setSessionErrors] = useState(0);
+  const [totalErrors, setTotalErrors] = useState(0);
 
   const loadCards = async () => {
     try {
@@ -32,6 +34,10 @@ export default function LearnScreen() {
       
       const allArchived = loadedCards.every(card => card.isArchived);
       setIsArchivedMode(allArchived);
+      
+      // Загружаем статистику сета
+      const setStats = await database.getSetStatistics(String(setId));
+      setTotalErrors(setStats.totalErrors);
       
       setCards(loadedCards);
       setCurrentCardIndex(0);
@@ -72,6 +78,9 @@ export default function LearnScreen() {
     
     if (correct) {
       setCorrectAnswers(prev => prev + 1);
+    } else {
+      setSessionErrors(prev => prev + 1);
+      setTotalErrors(prev => prev + 1);
     }
     setTotalAnswered(prev => prev + 1);
 
@@ -94,10 +103,13 @@ export default function LearnScreen() {
       setScreenState('question');
       setIsCorrect(false);
       generateAnswerOptions(cards[nextIndex]);
+      
+      // Сохраняем прогресс по сету
+      database.updateSetProgress(String(setId), nextIndex);
     } else {
       Alert.alert(
         'Session Complete!',
-        `You answered ${correctAnswers} out of ${totalAnswered} correctly.`,
+        `You answered ${correctAnswers} out of ${totalAnswered} correctly.\nErrors in this session: ${sessionErrors}\nTotal errors in this set: ${totalErrors}`,
         [
           { text: 'Continue', onPress: () => router.back() }
         ]
@@ -292,10 +304,16 @@ export default function LearnScreen() {
       <View style={styles.scoreContainer}>
         <Text style={styles.scoreText}>
           {correctAnswers}/{totalAnswered} correct
+          {sessionErrors > 0 && ` • ${sessionErrors} errors`}
           {isArchivedMode && (
             <Text style={styles.archivedModeText}> • 📦 Archive Mode</Text>
           )}
         </Text>
+        {totalErrors > 0 && (
+          <Text style={styles.totalErrorsText}>
+            Total errors in this set: {totalErrors}
+          </Text>
+        )}
       </View>
 
       {screenState === 'question' && renderQuestionScreen()}
@@ -357,6 +375,12 @@ const styles = StyleSheet.create({
   archivedModeText: {
     color: '#FF4500',
     fontWeight: '500',
+  },
+  totalErrorsText: {
+    fontSize: 14,
+    color: '#EF4444',
+    textAlign: 'center',
+    marginTop: 4,
   },
   fullScreenPressable: {
     flex: 1,
