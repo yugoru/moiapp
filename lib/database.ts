@@ -56,16 +56,16 @@ const ACID_COLORS = [
 // Предустановленные наборы данных
 const PRESET_SETS = [
   { 
-    name: 'grocery store.csv', 
+    name: 'Common Phrasal Verbs.csv', 
     data: require('./data/common-phrasal-verbs-data').commonPhrasalVerbsData,
     color: '#FF1493', 
-    icon: '🛒' 
+    icon: '📝' 
   },
   { 
-    name: 'startups.csv', 
+    name: 'Business English B2-C1.csv', 
     data: require('./data/business-english-data').businessEnglishData,
     color: '#00BFFF', 
-    icon: '🚀' 
+    icon: '💼' 
   },
   { 
     name: 'work in IT.csv', 
